@@ -1,0 +1,13 @@
+---
+
+nodes:
+  - host: hostname1
+    type: cisco_ios
+  - host: hostname2     
+    type: cisco_asa
+command_list:
+  - 'show int ip brief'
+  - 'show version'
+
+
+
