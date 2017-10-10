@@ -1,0 +1,4 @@
+netmiko==1.4.1
+PyYAML==3.11
+paramiko==2.2.1
+
