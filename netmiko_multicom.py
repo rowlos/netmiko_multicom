@@ -89,7 +89,10 @@ def main(arguments):
             connection = netmiko_create_conn(node['host'], args.username, password, node['type'])
             if connection:
                 print('***Executing commands on '+node['host']+':\n')
-                connection.enable()
+        #this goes to enable mode if devices need it (ios and asa devices)
+                if node['type'] in ('cisco_ios','cisco_asa'):
+                    print(node['type'])
+                    connection.enable()
                 com_log = netmiko_send(connection, yam_in['command_list'])
                 output.append(com_log)
                 with open(args.outfile + node['host']+'.txt', 'w') as outfile:
@@ -98,7 +101,8 @@ def main(arguments):
                         outfile.write('************************************************************\n')
                         outfile.write('********** Command output for ' + item + ' ****************\n\n')
                         outfile.write(com_log[item]+'\n\n')
-                connection.exit_enable_mode()
+                if node['type'] in ('cisco_ios', 'cisco_asa'): #exit enable mode if required
+                    connection.exit_enable_mode()
             else:
                 print('Skipping '+node['host']+' no connection established\n\n')
 
