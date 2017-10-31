@@ -101,7 +101,7 @@ def main(arguments):
                         outfile.write('************************************************************\n')
                         outfile.write('********** Command output for ' + item + ' ****************\n\n')
                         outfile.write(com_log[item]+'\n\n')
-                if node['type'] in ('cisco_ios', 'cisco_asa'): #exit enable mode if required
+                if node['type'] in ('cisco_ios'): #exit enable mode if required
                     connection.exit_enable_mode()
             else:
                 print('Skipping '+node['host']+' no connection established\n\n')
