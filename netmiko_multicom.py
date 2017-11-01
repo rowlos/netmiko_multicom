@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-'''
-this Script is designed to take a yaml input of hosts and a list of commands. 
+"""
+this Script is designed to take a yaml input of hosts and a list of commands.
 It will log into each of devices and return the outputs/resuls of the commands
-It has some exception handling and sanitising of inputs but still use at your own risk. 
+It has some exception handling and sanitising of inputs but still use at your own risk.
 Scott Rowlandson
 scott@soram.org
-'''
+"""
 
 import os
 import sys
@@ -21,25 +21,25 @@ from getpass import getpass
 def netmiko_create_conn(hostname, user, paswd, devicetype):
     #execute connect handler to connect to device
     try:
-        return(ConnectHandler(device_type = devicetype, host = hostname, username = user, password = paswd, secret = paswd, ssh_config_file = "~/.ssh/config"))
+        return ConnectHandler(device_type = devicetype, host = hostname, username = user, password = paswd, secret = paswd, ssh_config_file ="~/.ssh/config")
     except (EOFError, SSHException, ProxyCommandFailure, NetMikoTimeoutException, Exception):
         print('SSH is not enabled for this device '+ hostname +'\n')
-        return(False)
+        return False
 
 
 def netmiko_close_conn(connection):
-    return(connection.disconnect())
+    return connection.disconnect()
 
 
 def netmiko_findp(connection):
     #Check connection is still valid
     if connection.find_prompt(): 
         #print('#######SUCCESSFULL##########')
-        return(True)
+        return True
     else:
         #print('########FAILED##############')
         print('Connection failed to node: '+ host +'\n')
-        return(False)
+        return False
 
 
 def sanitise_input(com_list):
@@ -48,8 +48,8 @@ def sanitise_input(com_list):
     for line in sanitise_list: 
         for com in com_list:
             if line in com:
-                return(True)
-    return(False)
+                return True
+    return False
                 
 
 
@@ -62,7 +62,7 @@ def netmiko_send(connection, com_list):
             com_return = connection.send_command(item)
             output.append(com_return)
             print('***Success\n')
-        return(dict(zip(com_list, output)))
+        return dict(zip(com_list, output))
 
 
 def main(arguments):
@@ -101,7 +101,7 @@ def main(arguments):
                         outfile.write('************************************************************\n')
                         outfile.write('********** Command output for ' + item + ' ****************\n\n')
                         outfile.write(com_log[item]+'\n\n')
-                if node['type'] in ('cisco_ios'): #exit enable mode if required
+                if node['type'] in 'cisco_ios': #exit enable mode if required
                     connection.exit_enable_mode()
             else:
                 print('Skipping '+node['host']+' no connection established\n\n')
