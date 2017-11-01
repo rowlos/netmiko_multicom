@@ -29,25 +29,27 @@ class NetCom:
         try:
             self.conn = ConnectHandler(device_type=self.devtype, host=self.hostname, username=self.user,
                                        password=self.passwd, secret=self.passwd, ssh_config_file="~/.ssh/config")
-            print(self.conn)
         except (EOFError, SSHException, ProxyCommandFailure, NetMikoTimeoutException, Exception):
             print('SSH is not enabled for this device ' + self.hostname + '\n')
             sys.exit()
         self.outdict = {}
         self.multi_commands = []
+        if command:
+            self.command=command
+        else:
+            self.command = ''
 
 
     def __enter__(self):
-        if commands:
-            self.command = command
+        if self.command:
+            self.netmiko_send_single()
         else:
             sys.exit('no commands entered')
-        self.netmiko_send_single()
 
     def __exit__(self, type, value, traceback):
         # make sure the ssh connection is closed.
         #print(self.outdict())
-        self.conn.close()
+        self.conn.disconnect()
 
     def netmiko_close_conn(self):
         self.conn.disconnect()
@@ -86,7 +88,7 @@ class NetCom:
                 self.outdict = dict(zip(com_list, output))
                 self.conn.exit_enable_mode()
                 
-    def netmiko_send_multi(self):
+    def netmiko_send_single(self):
         #sends a single command and prints
         if self.netmiko_findp():
             print(self.conn.send_command(self.command))
