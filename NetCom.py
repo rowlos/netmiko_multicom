@@ -20,10 +20,8 @@ from getpass import getpass
 
 
 class NetCom:
-    def __init__(self, hostname, devtype, user, commands):
+    def __init__(self, hostname, user, devtype, commands):
 
-        self.conn = ConnectHandler(device_type=self.devtype, host=self.hostname, username=self.user,
-                                   password=self.passwd, secret=self.passwd, ssh_config_file="~/.ssh/config")
         self.hostname = hostname
         self.user = user
         self.devtype = devtype
@@ -80,7 +78,7 @@ class NetCom:
                 self.conn.enable()
                 for item in self.commands:
                     print('***Executing command: ' + item + '\n')
-                    com_return = connection.send_command(item)
+                    com_return = self.conn.send_command(item)
                     output.append(com_return)
                     print('***Success\n')
                 self.outdict = dict(zip(com_list, output))
