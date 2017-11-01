@@ -20,7 +20,7 @@ from getpass import getpass
 
 
 class NetCom:
-    def __init__(self, hostname, user, devtype, commands):
+    def __init__(self, hostname, user, devtype, command):
 
         self.hostname = hostname
         self.user = user
@@ -34,17 +34,19 @@ class NetCom:
             print('SSH is not enabled for this device ' + self.hostname + '\n')
             sys.exit()
         self.outdict = {}
-        if commands:
-            self.commands = commands
-        else:
-            sys.exit('no commands entered')
+        self.multi_commands = []
+
 
     def __enter__(self):
-        self.netmiko_send()
+        if commands:
+            self.command = command
+        else:
+            sys.exit('no commands entered')
+        self.netmiko_send_single()
 
     def __exit__(self, type, value, traceback):
         # make sure the ssh connection is closed.
-        print(self.outdict())
+        #print(self.outdict())
         self.conn.close()
 
     def netmiko_close_conn(self):
@@ -64,7 +66,7 @@ class NetCom:
         # search the comm_list of any instances of bad commands i.e. conf t, set, delete etc returns bolean!
         sanitise_list = ['conf', 'set', 'delete', 'modify']  # add to list for additional commands to be excluded
         for line in sanitise_list:
-            for com in self.commands:
+            for com in self.multi_commands:
                 if line in com:
                     return True
         return False
@@ -76,14 +78,18 @@ class NetCom:
             if self.sanitise_input:
                 output = []
                 self.conn.enable()
-                for item in self.commands:
+                for item in self.multi_commands:
                     print('***Executing command: ' + item + '\n')
                     com_return = self.conn.send_command(item)
                     output.append(com_return)
                     print('***Success\n')
                 self.outdict = dict(zip(com_list, output))
                 self.conn.exit_enable_mode()
-
+                
+    def netmiko_send_multi(self):
+        #sends a single command and prints
+        if self.netmiko_findp():
+            print(self.conn.send_command(self.command))
 
 def parse_options():
     """ CLI argument parser function for standalone use This function will take the arguments from the CLI and set them
