@@ -105,6 +105,7 @@ def parse_options():
     @rtype parser.parse_args(): list
     '''
     parser = argparse.ArgumentParser()
+    parse._action_groups.pop()
     required = parser.add_argument_group('required arguments')
     required.add_argument(
         '--infile',
@@ -113,7 +114,7 @@ def parse_options():
         help='Input YAML commands',
         required = True)
     required.add_argument(
-        '--outfile',
+        '--outpath',
         dest='OUTPATH',
         help='Outfile Path',
         required=True)
