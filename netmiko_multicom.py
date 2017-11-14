@@ -137,7 +137,7 @@ def main(args):
 
     sanitise_input(yam_in['command_list'])
     for node in yam_in['nodes']:
-        connection = netmiko_create_conn(node['host'],args.username,
+        connection = netmiko_create_conn(node['host'],args.USERNAME,
                     password,node['type'])
         if connection:
             print('***Executing commands on:\n'.format(node['host']))
