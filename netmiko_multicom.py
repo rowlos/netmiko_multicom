@@ -110,7 +110,6 @@ def parse_options():
     required.add_argument(
         '--infile',
         dest='INFILE',
-        action='store_true',
         help='Input YAML commands',
         required = True)
     required.add_argument(
