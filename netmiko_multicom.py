@@ -91,6 +91,7 @@ def save_multi(path: object, outdict):
         with open(path + '_{}.txt'.format(filecount), 'w') as outfile:
             outfile.write('Output of command {}:\n\n'.format(key))
             outfile.writelines(outdict[key])
+            filecount = filecount+1
 
 
 def parse_options():
@@ -141,7 +142,7 @@ def main(args):
         connection = netmiko_create_conn(node['host'], args.USERNAME,
                                          password, node['type'])
         if connection:
-            print('***Executing commands on:\n'.format(node['host']))
+            print('***Executing commands on {}:\n'.format(node['host']))
             if node['type'] in ('cisco_ios', 'cisco_asa'):
                 connection.enable()
             com_log = netmiko_send(connection, yam_in['command_list'])
