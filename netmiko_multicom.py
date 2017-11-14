@@ -20,7 +20,7 @@ import yaml
 
 
 
-def netmiko_create_conn(hostname, user, paswd, devicetype):
+def netmiko_create_conn(hostname: object, user: object, paswd: object, devicetype: object) -> object:
     #execute connect handler to connect to device
     try:
         return ConnectHandler(device_type = devicetype,
@@ -105,19 +105,23 @@ def parse_options():
     @rtype parser.parse_args(): list
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+    required = parser.add_argument_group('required arguments')
+    required.add_argument(
         '--infile',
         dest='INFILE',
         action='store_true',
-        help='Input YAML commands')
-    parser.add_argument(
+        help='Input YAML commands',
+        required = True)
+    required.add_argument(
         '--outfile',
-        dest='OUTFILE',
-        help='Outfile Path')
-    parser.add_argument(
+        dest='OUTPATH',
+        help='Outfile Path',
+        required=True)
+    required.add_argument(
         '--username',
         dest='USERNAME',
-        help='Username to log into devices')
+        help='Username to log into devices',
+        required=True)
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -133,28 +137,20 @@ def main(args):
 
     sanitise_input(yam_in['command_list'])
     for node in yam_in['nodes']:
-        connection = netmiko_create_conn(node['host'],
-                                         args.username,
-                                         password,
-                                         node['type'])
+        connection = netmiko_create_conn(node['host'],args.username,
+                    password,node['type'])
         if connection:
             print('***Executing commands on:\n'.format(node['host']))
             if node['type'] in ('cisco_ios','cisco_asa'):
                 connection.enable()
             com_log = netmiko_send(connection, yam_in['command_list'])
             output.append(com_log)
-            for item in yam_in['command_list']:
-                outfile.write('************************************************************\n')
-                outfile.write('********** Command output for ' + item + ' ****************\n\n')
-                outfile.write(com_log[item]+'\n\n')
+            save_multi(args.OUTPATH+'/'+node, com_log)
+
             if node['type'] in 'cisco_ios': #exit enable mode if required
                 connection.exit_enable_mode()
         else:
             print('Skipping '+node['host']+' no connection established\n\n')
-
-        ## If you want to do something else with output here it is saved as a array of dictionaries
-	## each array entry is per host
-	## each host has a dictionary in the form {command:output}
 
 
 
