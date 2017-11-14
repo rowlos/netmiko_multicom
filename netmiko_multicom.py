@@ -75,7 +75,7 @@ def netmiko_send(connection, com_list):
             print('***Success\n')
         return dict(zip(com_list, output))
 
-def save_multi(path: object, outdict: object) -> object:
+def save_multi(path: object, outdict):
     '''
     Function to save each element of the dictionary as a separate output file
 
@@ -145,7 +145,7 @@ def main(args):
                 connection.enable()
             com_log = netmiko_send(connection, yam_in['command_list'])
             output.append(com_log)
-            save_multi(args.OUTPATH + '/' + node, com_log)
+            save_multi(args.OUTPATH + '/' + node['host'], com_log)
 
             if node['type'] in 'cisco_ios': #exit enable mode if required
                 connection.exit_enable_mode()
