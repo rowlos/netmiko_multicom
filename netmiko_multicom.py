@@ -3,26 +3,34 @@
 """
 this Script is designed to take a yaml input of hosts and a list of commands.
 It will log into each of devices and return the outputs/resuls of the commands
-It has some exception handling and sanitising of inputs but still use at your own risk.
+It has some exception handling and sanitising of inputs but still use at your
+own risk.
 Scott Rowlandson
 scott@soram.org
 """
 
-import os
-import sys
 import argparse
+from getpass import getpass
 from netmiko import ConnectHandler
 from netmiko.ssh_exception import NetMikoTimeoutException
-import yaml
+import os
 from paramiko.ssh_exception import SSHException, ProxyCommandFailure
-from getpass import getpass
+import sys
+import yaml
+
 
 
 def netmiko_create_conn(hostname, user, paswd, devicetype):
     #execute connect handler to connect to device
     try:
-        return ConnectHandler(device_type = devicetype, host = hostname, username = user, password = paswd, secret = paswd, ssh_config_file ="~/.ssh/config")
-    except (EOFError, SSHException, ProxyCommandFailure, NetMikoTimeoutException, Exception):
+        return ConnectHandler(device_type = devicetype,
+                              host = hostname,
+                              username = user,
+                              password = paswd,
+                              secret = paswd,
+                              ssh_config_file ="~/.ssh/config")
+    except (EOFError, SSHException, ProxyCommandFailure,
+            NetMikoTimeoutException, Exception):
         print('SSH is not enabled for this device '+ hostname +'\n')
         return False
 
@@ -43,15 +51,18 @@ def netmiko_findp(connection):
 
 
 def sanitise_input(com_list):
-    #search the comm_list of any instances of bad commands i.e. conf t, set, delete etc returns bolean!
-    sanitise_list = ['conf', 'set', 'delete', 'modify'] # add to list for additional commands to be excluded
+    '''
+    search the comm_list of any instances of bad commands
+    # i.e. conf t, set, delete etc
+    If found it exists the program
+    '''
+    sanitise_list = ['conf', 'set', 'delete', 'modify']
     for line in sanitise_list: 
         for com in com_list:
             if line in com:
-                return True
-    return False
+                print('Bad command {}'.format(line))
+                sys.exit('BAD commands exiting....')
                 
-
 
 def netmiko_send(connection, com_list):
     #check connection is still valid
@@ -64,47 +75,82 @@ def netmiko_send(connection, com_list):
             print('***Success\n')
         return dict(zip(com_list, output))
 
+def save_multi(path, outdict):
+    '''
+    Function to save each element of the dictionary as a separate output file
 
-def main(arguments):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-y', '--infile', type=str, help='Input Yaml comands', required = True)
-    parser.add_argument('-o', '--outfile', type=str, help='Outfile path', required = False, default = '')
-    parser.add_argument('-u', '--username', type=str, help='ssh username', required = True, default = '')
+    :param path: output file path name
+    :type path: str
+    :param outdict: dictionary containing key, and output str
+    :type outdict: dict[str:str]
+    :return:
+    '''
+    file_count = 1
+    for key in outdict.keys():
+        with open(path+filecount+'.txt','w') as outfile:
+            outfile.write('Output of command {}:\n\n'.format(key))
+            outfile.writelines(outdict[key])
 
-    args = parser.parse_args()
+
+def parse_options():
+    ''' CLI argument parser function for standalone use
+
+    This function will take the arguments from the CLI and set them
+    as module variables.
+
+    If no options are passed, the default behaviour will be to print the
+    arguments available to the user.
+
+    @return parser.parse_args(): The CLI options for use in main()
+    @rtype parser.parse_args(): list
+    '''
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--infile',
+        dest='INFILE',
+        action='store_true',
+        help='Input YAML commands')
+    parser.add_argument(
+        '--outfile',
+        dest='OUTFILE',
+        help='Outfile Path')
+    parser.add_argument(
+        '--username',
+        dest='USERNAME',
+        help='Username to log into devices')
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    return parser.parse_args()
+
+
+def main(args):
     password = getpass()
     output = []
-    
-
     ####Open the yaml input file
     with open(args.infile,'rb') as in_file:
         yam_in = yaml.load(in_file)
 
-    #Sanitise input to check that there no malicious commands (more checks to be added here)
-    if sanitise_input(yam_in['command_list']):
-        print('badcommand')
-        sys.exit('Bad input for commands')
-    else: #if input is OK -> continue
-        for node in yam_in['nodes']:
-            connection = netmiko_create_conn(node['host'], args.username, password, node['type'])
-            if connection:
-                print('***Executing commands on '+node['host']+':\n')
-        #this goes to enable mode if devices need it (ios and asa devices)
-                if node['type'] in ('cisco_ios','cisco_asa'):
-                    print(node['type'])
-                    connection.enable()
-                com_log = netmiko_send(connection, yam_in['command_list'])
-                output.append(com_log)
-                with open(args.outfile + node['host']+'.txt', 'w') as outfile:
-                    outfile.write('Command output for host: '+ node['host']+'\n\n')
-                    for item in yam_in['command_list']:
-                        outfile.write('************************************************************\n')
-                        outfile.write('********** Command output for ' + item + ' ****************\n\n')
-                        outfile.write(com_log[item]+'\n\n')
-                if node['type'] in 'cisco_ios': #exit enable mode if required
-                    connection.exit_enable_mode()
-            else:
-                print('Skipping '+node['host']+' no connection established\n\n')
+    sanitise_input(yam_in['command_list'])
+    for node in yam_in['nodes']:
+        connection = netmiko_create_conn(node['host'],
+                                         args.username,
+                                         password,
+                                         node['type'])
+        if connection:
+            print('***Executing commands on:\n'.format(node['host']))
+            if node['type'] in ('cisco_ios','cisco_asa'):
+                connection.enable()
+            com_log = netmiko_send(connection, yam_in['command_list'])
+            output.append(com_log)
+            for item in yam_in['command_list']:
+                outfile.write('************************************************************\n')
+                outfile.write('********** Command output for ' + item + ' ****************\n\n')
+                outfile.write(com_log[item]+'\n\n')
+            if node['type'] in 'cisco_ios': #exit enable mode if required
+                connection.exit_enable_mode()
+        else:
+            print('Skipping '+node['host']+' no connection established\n\n')
 
         ## If you want to do something else with output here it is saved as a array of dictionaries
 	## each array entry is per host
@@ -113,4 +159,4 @@ def main(arguments):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    main(parse_options())
