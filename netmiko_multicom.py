@@ -19,19 +19,19 @@ import sys
 import yaml
 
 
-
-def netmiko_create_conn(hostname: object, user: object, paswd: object, devicetype: object) -> object:
-    #execute connect handler to connect to device
+def netmiko_create_conn(hostname: object, user: object, paswd: object,
+                        devicetype: object) -> object:
+    # execute connect handler to connect to device
     try:
-        return ConnectHandler(device_type = devicetype,
-                              host = hostname,
-                              username = user,
-                              password = paswd,
-                              secret = paswd,
-                              ssh_config_file ="~/.ssh/config")
+        return ConnectHandler(device_type=devicetype,
+                              host=hostname,
+                              username=user,
+                              password=paswd,
+                              secret=paswd,
+                              ssh_config_file="~/.ssh/config")
     except (EOFError, SSHException, ProxyCommandFailure,
             NetMikoTimeoutException, Exception):
-        print('SSH is not enabled for this device '+ hostname +'\n')
+        print('SSH is not enabled for this device ' + hostname + '\n')
         return False
 
 
@@ -40,13 +40,13 @@ def netmiko_close_conn(connection):
 
 
 def netmiko_findp(connection):
-    #Check connection is still valid
-    if connection.find_prompt(): 
-        #print('#######SUCCESSFULL##########')
+    # Check connection is still valid
+    if connection.find_prompt():
+        # print('#######SUCCESSFULL##########')
         return True
     else:
-        #print('########FAILED##############')
-        print('Connection failed to node: '+ host +'\n')
+        # print('########FAILED##############')
+        print('Connection failed to node: ' + host + '\n')
         return False
 
 
@@ -57,23 +57,24 @@ def sanitise_input(com_list):
     If found it exists the program
     '''
     sanitise_list = ['conf', 'set', 'delete', 'modify']
-    for line in sanitise_list: 
+    for line in sanitise_list:
         for com in com_list:
             if line in com:
                 print('Bad command {}'.format(line))
                 sys.exit('BAD commands exiting....')
-                
+
 
 def netmiko_send(connection, com_list):
-    #check connection is still valid
+    # check connection is still valid
     if netmiko_findp(connection):
         output = []
         for item in com_list:
-            print('***Executing command: '+item +'\n')
+            print('***Executing command: ' + item + '\n')
             com_return = connection.send_command(item)
             output.append(com_return)
             print('***Success\n')
         return dict(zip(com_list, output))
+
 
 def save_multi(path: object, outdict):
     '''
@@ -87,7 +88,7 @@ def save_multi(path: object, outdict):
     '''
     filecount = 1
     for key in outdict.keys():
-        with open(path+filecount+'.txt','w') as outfile:
+        with open(path + '_{}.txt'.format(filecount), 'w') as outfile:
             outfile.write('Output of command {}:\n\n'.format(key))
             outfile.writelines(outdict[key])
 
@@ -111,7 +112,7 @@ def parse_options():
         '--infile',
         dest='INFILE',
         help='Input YAML commands',
-        required = True)
+        required=True)
     required.add_argument(
         '--outpath',
         dest='OUTPATH',
@@ -132,26 +133,25 @@ def main(args):
     password = getpass()
     output = []
     ####Open the yaml input file
-    with open(args.INFILE,'rb') as in_file:
+    with open(args.INFILE, 'rb') as in_file:
         yam_in = yaml.load(in_file)
 
     sanitise_input(yam_in['command_list'])
     for node in yam_in['nodes']:
-        connection = netmiko_create_conn(node['host'],args.USERNAME,
-                    password,node['type'])
+        connection = netmiko_create_conn(node['host'], args.USERNAME,
+                                         password, node['type'])
         if connection:
             print('***Executing commands on:\n'.format(node['host']))
-            if node['type'] in ('cisco_ios','cisco_asa'):
+            if node['type'] in ('cisco_ios', 'cisco_asa'):
                 connection.enable()
             com_log = netmiko_send(connection, yam_in['command_list'])
             output.append(com_log)
             save_multi(args.OUTPATH + '/' + node['host'], com_log)
 
-            if node['type'] in 'cisco_ios': #exit enable mode if required
+            if node['type'] in 'cisco_ios':  # exit enable mode if required
                 connection.exit_enable_mode()
         else:
-            print('Skipping '+node['host']+' no connection established\n\n')
-
+            print('Skipping ' + node['host'] + ' no connection established\n\n')
 
 
 if __name__ == "__main__":
