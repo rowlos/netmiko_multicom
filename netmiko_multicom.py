@@ -105,7 +105,7 @@ def parse_options():
     @rtype parser.parse_args(): list
     '''
     parser = argparse.ArgumentParser()
-    parse._action_groups.pop()
+    parser._action_groups.pop()
     required = parser.add_argument_group('required arguments')
     required.add_argument(
         '--infile',
