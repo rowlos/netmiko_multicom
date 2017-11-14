@@ -87,6 +87,7 @@ def save_multi(path: object, outdict):
     :return:
     '''
     filecount = 1
+    os.makedirs(os.path.dirname(path), exist_ok = True)
     for key in outdict.keys():
         with open(path + '_{}.txt'.format(filecount), 'w') as outfile:
             outfile.write('Output of command {}:\n\n'.format(key))
