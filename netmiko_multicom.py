@@ -85,7 +85,7 @@ def save_multi(path: object, outdict):
     :type outdict: dict[str:str]
     :return:
     '''
-    file_count = 1
+    filecount = 1
     for key in outdict.keys():
         with open(path+filecount+'.txt','w') as outfile:
             outfile.write('Output of command {}:\n\n'.format(key))
